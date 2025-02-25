@@ -1,7 +1,7 @@
 "use client"
 
-import { Card, LineChart, BarChart, type Color, Flex, Metric, Text, Title, Badge } from "@tremor/react"
 import { IconUsers, IconUserCheck, IconForms, IconFileCheck } from "@tabler/icons-react"
+import { LineChart, BarChart } from "@tremor/react"
 
 const metrics = [
   {
@@ -9,28 +9,28 @@ const metrics = [
     value: "145",
     icon: IconUsers,
     description: "Total clients in onboarding process",
-    color: "blue" as Color,
+    color: "blue",
   },
   {
     title: "Initiation Stage",
     value: "48",
     icon: IconUserCheck,
     description: "Clients in initial meetings and formalities",
-    color: "emerald" as Color,
+    color: "emerald",
   },
   {
     title: "Documentation",
     value: "64",
     icon: IconForms,
     description: "Clients in KYC and documentation phase",
-    color: "amber" as Color,
+    color: "amber",
   },
   {
     title: "Account Opening",
     value: "33",
     icon: IconFileCheck,
     description: "Clients in final account opening stage",
-    color: "rose" as Color,
+    color: "rose",
   },
 ]
 
@@ -79,46 +79,49 @@ export default function DashboardPage() {
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {metrics.map((metric) => (
-            <Card key={metric.title} decoration="top" decorationColor={metric.color}>
-              <Flex justifyContent="between" alignItems="center">
-                <Text>{metric.title}</Text>
-                <Badge color={metric.color}>
-                  <metric.icon className="h-4 w-4" />
-                </Badge>
-              </Flex>
-              <Metric className="mt-2">{metric.value}</Metric>
-              <Text className="mt-2 text-xs">{metric.description}</Text>
-            </Card>
+            <div key={metric.title} className="bg-white rounded-xl p-6 shadow-sm border border-zinc-200">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-zinc-600">{metric.title}</p>
+                <div className={`w-8 h-8 rounded-lg bg-${metric.color}-50 flex items-center justify-center`}>
+                  <metric.icon className={`w-5 h-5 text-${metric.color}-500`} />
+                </div>
+              </div>
+              <p className="text-2xl font-semibold mt-2 text-zinc-900">{metric.value}</p>
+              <p className="text-xs text-zinc-500 mt-1">{metric.description}</p>
+            </div>
           ))}
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <Title>Clients Onboarded Over Time</Title>
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-zinc-200">
+            <h3 className="font-medium mb-4">Clients Onboarded Over Time</h3>
             <LineChart
-              className="mt-6 h-80"
+              className="h-80"
               data={clientData}
               index="date"
               categories={["Clients Onboarded"]}
               colors={["blue"]}
-              yAxisWidth={40}
               showAnimation
               showLegend={false}
+              showGridLines={false}
+              showYAxis={false}
+              curveType="monotone"
             />
-          </Card>
-          <Card>
-            <Title>Client Stage Distribution</Title>
+          </div>
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-zinc-200">
+            <h3 className="font-medium mb-4">Client Stage Distribution</h3>
             <BarChart
-              className="mt-6 h-80"
+              className="h-80"
               data={stageData}
               index="stage"
               categories={["Number of Clients"]}
               colors={["blue"]}
-              yAxisWidth={40}
               showAnimation
               showLegend={false}
+              showGridLines={false}
+              showYAxis={false}
             />
-          </Card>
+          </div>
         </div>
       </div>
     </main>

@@ -6,15 +6,13 @@ import { usePathname } from "next/navigation"
 import type React from "react"
 import { useState, createContext, useContext, useEffect } from "react"
 import { AnimatePresence, motion, useAnimation } from "framer-motion"
-import { IconMenu2, IconX } from "@tabler/icons-react"
+import { IconMenu2, IconX, IconLogout } from "@tabler/icons-react"
+import { useRouter } from "next/navigation"
 
 interface Links {
   label: string
   href: string
-  icon: React.ComponentType<{
-    className?: string
-    strokeWidth?: number
-  }>
+  icon: React.ReactNode
 }
 
 interface SidebarContextProps {
@@ -24,7 +22,7 @@ interface SidebarContextProps {
 
 const SidebarContext = createContext<SidebarContextProps | undefined>(undefined)
 
-export const useSidebar = () => {
+const useSidebar = () => {
   const context = useContext(SidebarContext)
   if (!context) {
     throw new Error("useSidebar must be used within a SidebarProvider")
@@ -32,15 +30,34 @@ export const useSidebar = () => {
   return context
 }
 
-export const Sidebar = ({ children }: { children: React.ReactNode }) => {
+// Renamed to SidebarRoot to avoid naming conflicts
+const SidebarRoot = ({ children }: { children: React.ReactNode }) => {
   const [expanded, setExpanded] = useState(true)
-
   return <SidebarContext.Provider value={{ expanded, setExpanded }}>{children}</SidebarContext.Provider>
 }
 
-export const SidebarContent = ({ children }: { children: React.ReactNode }) => {
+const SidebarContent = ({ children }: { children: React.ReactNode }) => {
   const { expanded, setExpanded } = useSidebar()
   const controls = useAnimation()
+  const router = useRouter()
+  const [user, setUser] = useState<{ email: string; firstName: string; lastName: string } | null>(null)
+
+  useEffect(() => {
+    // Get user data from the auth token
+    const token = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("auth-token="))
+      ?.split("=")[1]
+
+    if (token) {
+      try {
+        const userData = JSON.parse(Buffer.from(token, "base64").toString())
+        setUser(userData)
+      } catch (error) {
+        console.error("Error parsing auth token:", error)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     controls.start({
@@ -49,22 +66,75 @@ export const SidebarContent = ({ children }: { children: React.ReactNode }) => {
     })
   }, [expanded, controls])
 
+  const handleSignOut = () => {
+    document.cookie = "auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT"
+    router.push("/")
+  }
+
   return (
     <>
       {/* Desktop Sidebar */}
       <motion.div
-        className="hidden md:flex h-screen border-r border-zinc-200 bg-white relative"
+        className="hidden md:flex h-screen border-r border-zinc-200 bg-white fixed left-0 top-0 z-30"
         animate={controls}
         onHoverStart={() => setExpanded(true)}
         onHoverEnd={() => setExpanded(false)}
       >
-        <div className="flex flex-col flex-1 gap-4 p-4">{children}</div>
+        <div className="flex flex-col flex-1 gap-4 p-4">
+          {children}
+
+          {/* User Profile Section */}
+          {user && (
+            <div className="mt-auto border-t border-zinc-200 pt-4">
+              <div className="flex items-center gap-3 px-2">
+                <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center">
+                  {user.firstName?.[0]}
+                </div>
+                <AnimatePresence mode="wait">
+                  {expanded && (
+                    <motion.div
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -8 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <p className="text-sm font-medium truncate">
+                        {user.firstName} {user.lastName}
+                      </p>
+                      <p className="text-xs text-zinc-500 truncate">{user.email}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-3 px-2 py-2 mt-2 w-full rounded-lg text-red-600 hover:bg-red-50"
+              >
+                <IconLogout size={20} />
+                <AnimatePresence mode="wait">
+                  {expanded && (
+                    <motion.span
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -8 }}
+                      transition={{ duration: 0.2 }}
+                      className="text-sm font-medium"
+                    >
+                      Sign Out
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </button>
+            </div>
+          )}
+        </div>
       </motion.div>
 
       {/* Mobile Sidebar */}
       <div className="md:hidden">
         <button onClick={() => setExpanded(true)} className="fixed top-4 left-4 z-40 p-2 bg-white rounded-lg shadow-lg">
-          <IconMenu2 className="w-5 h-5" />
+          <IconMenu2 size={20} />
         </button>
 
         <AnimatePresence>
@@ -86,10 +156,33 @@ export const SidebarContent = ({ children }: { children: React.ReactNode }) => {
               >
                 <div className="flex justify-end mb-4">
                   <button onClick={() => setExpanded(false)}>
-                    <IconX className="w-5 h-5" />
+                    <IconX size={20} />
                   </button>
                 </div>
                 {children}
+                {/* Mobile User Profile Section */}
+                {user && (
+                  <div className="mt-auto border-t border-zinc-200 pt-4">
+                    <div className="flex items-center gap-3 px-2">
+                      <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center">
+                        {user.firstName?.[0]}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">
+                          {user.firstName} {user.lastName}
+                        </p>
+                        <p className="text-xs text-zinc-500">{user.email}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleSignOut}
+                      className="flex items-center gap-3 px-2 py-2 mt-2 w-full rounded-lg text-red-600 hover:bg-red-50"
+                    >
+                      <IconLogout size={20} />
+                      <span className="text-sm font-medium">Sign Out</span>
+                    </button>
+                  </div>
+                )}
               </motion.div>
             </>
           )}
@@ -99,7 +192,7 @@ export const SidebarContent = ({ children }: { children: React.ReactNode }) => {
   )
 }
 
-export const SidebarHeader = () => {
+const SidebarHeader = () => {
   const { expanded } = useSidebar()
 
   return (
@@ -119,7 +212,7 @@ export const SidebarHeader = () => {
   )
 }
 
-export const SidebarNavigation = ({ items }: { items: Links[] }) => {
+const SidebarNavigation = ({ items }: { items: Links[] }) => {
   const pathname = usePathname()
 
   return (
@@ -133,7 +226,6 @@ export const SidebarNavigation = ({ items }: { items: Links[] }) => {
 
 const SidebarItem = ({ item, active }: { item: Links; active: boolean }) => {
   const { expanded } = useSidebar()
-  const Icon = item.icon
 
   return (
     <Link
@@ -144,9 +236,7 @@ const SidebarItem = ({ item, active }: { item: Links; active: boolean }) => {
         active && "text-zinc-900 bg-zinc-100",
       )}
     >
-      <div className="w-8 h-8 flex items-center justify-center">
-        <Icon className="w-5 h-5" strokeWidth={active ? 2 : 1.5} />
-      </div>
+      <div className="w-8 h-8 flex items-center justify-center">{item.icon}</div>
       <AnimatePresence mode="wait">
         {expanded && (
           <motion.span
@@ -162,5 +252,15 @@ const SidebarItem = ({ item, active }: { item: Links; active: boolean }) => {
       </AnimatePresence>
     </Link>
   )
+}
+
+// Single export statement with all components
+export {
+  SidebarRoot as Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarNavigation,
+  useSidebar,
+  SidebarRoot as SidebarProvider,
 }
 
