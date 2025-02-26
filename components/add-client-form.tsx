@@ -8,19 +8,10 @@ import { Input } from "@/components/ui/input"
 import { createClient } from "@/lib/actions"
 import { useRouter } from "next/navigation"
 
-const PREDEFINED_STAGES = ["Initiation", "Documentation", "Account Opening"]
-
-const STAGE_MAPPING = {
-  Initiation: 1,
-  Documentation: 2,
-  "Account Opening": 3,
-} as const
-
 export function AddClientForm() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [selectedStageName, setSelectedStageName] = useState(PREDEFINED_STAGES[0])
   const [isActive, setIsActive] = useState(true)
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0])
 
@@ -31,9 +22,8 @@ export function AddClientForm() {
 
     try {
       const formData = new FormData(e.currentTarget)
-      // Get the stage_id based on the selected stage name
-      const stageId = STAGE_MAPPING[selectedStageName as keyof typeof STAGE_MAPPING]
-      formData.set("stage_id", stageId.toString())
+      // Always set stage_id to 1 (Initiation)
+      formData.set("stage_id", "1")
       formData.set("is_active", isActive.toString())
       formData.set("start_date", startDate)
 
@@ -64,23 +54,6 @@ export function AddClientForm() {
       <div className="space-y-2">
         <Label htmlFor="email">Email Address</Label>
         <Input id="email" name="email" type="email" placeholder="client@example.com" required />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="stage">Stage</Label>
-        <select
-          id="stage"
-          name="stage"
-          value={selectedStageName}
-          onChange={(e) => setSelectedStageName(e.target.value)}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {PREDEFINED_STAGES.map((stageName) => (
-            <option key={stageName} value={stageName}>
-              {stageName}
-            </option>
-          ))}
-        </select>
       </div>
 
       <div className="space-y-2">

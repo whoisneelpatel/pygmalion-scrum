@@ -1,7 +1,7 @@
 "use client"
 
 import { getClients } from "@/lib/actions"
-import { Table, TableHead, TableHeaderCell, TableBody, TableRow, TableCell, Badge, Button, Card } from "@tremor/react"
+import { Table, TableHead, TableHeaderCell, TableBody, TableRow, TableCell, Badge, Card } from "@tremor/react"
 import { IconPlus } from "@tabler/icons-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
@@ -21,7 +21,7 @@ const STAGE_COLORS = {
 } as const
 
 interface Client {
-  id: number
+  id: string
   name: string
   email: string
   stage_id: number
@@ -33,12 +33,13 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([])
 
   useEffect(() => {
-    async function fetchClients() {
-      const data = await getClients()
-      setClients(data)
-    }
     fetchClients()
   }, [])
+
+  async function fetchClients() {
+    const data = await getClients()
+    setClients(data)
+  }
 
   return (
     <main className="flex-1 p-8">
@@ -49,10 +50,10 @@ export default function ClientsPage() {
             <p className="text-zinc-500 mt-1">Manage your client onboarding process</p>
           </div>
           <Link href="/dashboard/clients/add">
-            <Button className="bg-blue-500 hover:bg-blue-600 text-white">
-              <IconPlus className="h-5 w-5" />
+            <button className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-blue-500 text-white hover:bg-blue-600 h-10 px-4 py-2">
+              <IconPlus className="h-5 w-5 mr-2" />
               Add Client
-            </Button>
+            </button>
           </Link>
         </div>
 
@@ -73,8 +74,12 @@ export default function ClientsPage() {
                 const stageColor = STAGE_COLORS[stageName as keyof typeof STAGE_COLORS]
 
                 return (
-                  <TableRow key={client.id}>
-                    <TableCell>{client.name}</TableCell>
+                  <TableRow key={client.id} className="hover:bg-gray-50">
+                    <TableCell>
+                      <Link href={`/dashboard/clients/${client.id}`} className="text-blue-600 hover:underline">
+                        {client.name}
+                      </Link>
+                    </TableCell>
                     <TableCell>{client.email}</TableCell>
                     <TableCell>
                       <Badge color={stageColor}>{stageName}</Badge>

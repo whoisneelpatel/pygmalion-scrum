@@ -1,74 +1,137 @@
 "use client"
 
+import { getClients } from "@/lib/actions"
 import { IconUsers, IconUserCheck, IconForms, IconFileCheck } from "@tabler/icons-react"
 import { LineChart, BarChart } from "@tremor/react"
+import { useEffect, useState } from "react"
 
-const metrics = [
-  {
-    title: "Total Onboarding",
-    value: "145",
-    icon: IconUsers,
-    description: "Total clients in onboarding process",
-    color: "blue",
-  },
-  {
-    title: "Initiation Stage",
-    value: "48",
-    icon: IconUserCheck,
-    description: "Clients in initial meetings and formalities",
-    color: "emerald",
-  },
-  {
-    title: "Documentation",
-    value: "64",
-    icon: IconForms,
-    description: "Clients in KYC and documentation phase",
-    color: "amber",
-  },
-  {
-    title: "Account Opening",
-    value: "33",
-    icon: IconFileCheck,
-    description: "Clients in final account opening stage",
-    color: "rose",
-  },
-]
+interface Client {
+  id: number
+  name: string
+  email: string
+  stage_id: number
+  is_active: boolean
+  start_date: string
+}
 
-const clientData = [
-  {
-    date: "Jan 23",
-    "Clients Onboarded": 45,
-  },
-  {
-    date: "Feb 23",
-    "Clients Onboarded": 78,
-  },
-  {
-    date: "Mar 23",
-    "Clients Onboarded": 112,
-  },
-  {
-    date: "Apr 23",
-    "Clients Onboarded": 145,
-  },
-]
-
-const stageData = [
-  {
-    stage: "Initiation",
-    "Number of Clients": 48,
-  },
-  {
-    stage: "Documentation",
-    "Number of Clients": 64,
-  },
-  {
-    stage: "Account Opening",
-    "Number of Clients": 33,
-  },
-]
+interface Metrics {
+  total: number
+  initiation: number
+  documentation: number
+  accountOpening: number
+}
 
 export default function DashboardPage() {
+  const [metrics, setMetrics] = useState<Metrics>({
+    total: 0,
+    initiation: 0,
+    documentation: 0,
+    accountOpening: 0,
+  })
+
+  useEffect(() => {
+    async function fetchAndCalculateMetrics() {
+      const clients = await getClients()
+
+      // Calculate metrics
+      const calculatedMetrics = clients.reduce(
+        (acc: Metrics, client: Client) => {
+          acc.total += 1
+
+          switch (client.stage_id) {
+            case 1: // Initiation
+              acc.initiation += 1
+              break
+            case 2: // Documentation
+              acc.documentation += 1
+              break
+            case 3: // Account Opening
+              acc.accountOpening += 1
+              break
+          }
+
+          return acc
+        },
+        {
+          total: 0,
+          initiation: 0,
+          documentation: 0,
+          accountOpening: 0,
+        },
+      )
+
+      setMetrics(calculatedMetrics)
+    }
+
+    fetchAndCalculateMetrics()
+  }, [])
+
+  const metricsConfig = [
+    {
+      title: "Total Onboarding",
+      value: metrics.total.toString(),
+      icon: IconUsers,
+      description: "Total clients in onboarding process",
+      color: "blue",
+    },
+    {
+      title: "Initiation Stage",
+      value: metrics.initiation.toString(),
+      icon: IconUserCheck,
+      description: "Clients in initial meetings and formalities",
+      color: "emerald",
+    },
+    {
+      title: "Documentation",
+      value: metrics.documentation.toString(),
+      icon: IconForms,
+      description: "Clients in KYC and documentation phase",
+      color: "amber",
+    },
+    {
+      title: "Account Opening",
+      value: metrics.accountOpening.toString(),
+      icon: IconFileCheck,
+      description: "Clients in final account opening stage",
+      color: "rose",
+    },
+  ]
+
+  const clientData = [
+    {
+      date: "Jan 23",
+      "Clients Onboarded": metrics.total,
+    },
+    // Keep the sample data for the chart for now
+    {
+      date: "Feb 23",
+      "Clients Onboarded": 78,
+    },
+    {
+      date: "Mar 23",
+      "Clients Onboarded": 112,
+    },
+    {
+      date: "Apr 23",
+      "Clients Onboarded": 145,
+    },
+  ]
+
+  const stageData = [
+    {
+      stage: "Initiation",
+      "Number of Clients": metrics.initiation,
+    },
+    {
+      stage: "Documentation",
+      "Number of Clients": metrics.documentation,
+    },
+    {
+      stage: "Account Opening",
+      "Number of Clients": metrics.accountOpening,
+    },
+  ]
+
   return (
     <main className="flex-1 p-8">
       <div className="flex flex-col gap-6">
@@ -78,7 +141,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {metrics.map((metric) => (
+          {metricsConfig.map((metric) => (
             <div key={metric.title} className="bg-white rounded-xl p-6 shadow-sm border border-zinc-200">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-zinc-600">{metric.title}</p>
